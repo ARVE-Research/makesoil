@@ -22,7 +22,7 @@
 # example:
 
 # outdir=../global30minute
-outdir=NA5km
+outdir=global_0.25
 
 # specify a target directory where the raw data is stored (or should be downloaded), 
 # example:
@@ -37,19 +37,19 @@ getdata=false
 
 # specify a map projection using an EPSG code, proj4 string, or external file
 
-# proj="EPSG:4326"  # example: unprojected lon-lat
+proj="EPSG:4326"  # example: unprojected lon-lat
 
-proj="NAlaea.prj"
+# proj="NAlaea.prj"
 
 # specify the map extent and resolution
 
-# extent="-180. -90.  180. 90."      #  <xmin> <ymin> <xmax> <ymax>
+extent="-180. -90.  180. 90."      #  <xmin> <ymin> <xmax> <ymax>
 
-extent="-4350000. -3885000.  3345000. 3780000."      #  <xmin> <ymin> <xmax> <ymax>
+# extent="-4350000. -3885000.  3345000. 3780000."      #  <xmin> <ymin> <xmax> <ymax>
 
 res=5000.
 
-min=30.                           # target resolution in MINUTES for lat-lon or METERS for projected grids
+min=15.                           # target resolution in MINUTES for lat-lon or METERS for projected grids
 
 if [ $proj == "EPSG:4326" ]
 then
@@ -88,12 +88,18 @@ gdalwarp --quiet -overwrite -t_srs $proj -te $extent -wm 12G -multi -wo NUM_THRE
 
 # get the dimensions of the target file
 
-fileinfo=( $(gmt grdinfo -C tmp.nc?Band1) )
+bounds=( $(gmt grdinfo -C tmp.nc?Band1) )
 
-xlen=${fileinfo[9]}
-ylen=${fileinfo[10]}
+xlen=${bounds[9]}
+ylen=${bounds[10]}
 
-echo $xlen $ylen $res
+xmin=${bounds[1]}
+xmax=${bounds[2]}
+
+ymin=${bounds[3]}
+ymax=${bounds[4]}
+
+echo $xlen $ylen $res $xmin $xmax $ymin $ymax
 
 # -----
 # 3) create output file based on the dimensions of the input
@@ -102,7 +108,16 @@ outfile=$outdir/soils.nc
 
 echo creating $outfile
 
-sed -e "s/xlen/$xlen/g" -e "s/ylen/$ylen/g" soildata.cdl | ncgen -4 -o $outfile
+sed -e \
+'s/xlen/'$xlen'/g 
+ s/ylen/'$ylen'/g
+ s/xmin/'$xmin'/g
+ s/xmax/'$xmax'/g 
+ s/ymin/'$ymin'/g
+ s/ymax/'$ymax'/g' \
+soildata_template.cdl > soildata.cdl
+
+ncgen -4 -o $outfile soildata.cdl
 
 # -----
 # 4) paste WRB code into output
@@ -120,21 +135,21 @@ gdalwarp --quiet -overwrite -t_srs $proj -te $extent -wm 12G -multi -wo NUM_THRE
 # -----
 # 6) paste soil depth into output
 
-# infile=$datadir/hill-slope_valley-bottom.tif  # upland_valley-bottom_and_lowland_sedimentary_deposit_thickness.tif # upland_hill-slope_soil_thickness.tif
+echo "make soil depth"
+
+# i=1
+# for infile in upland_valley-bottom_and_lowland_sedimentary_deposit_thickness.tif upland_hill-slope_soil_thickness.tif hill-slope_valley-bottom.tif
+# do
 # 
-# gdalwarp -overwrite -t_srs $proj -te $extent -wm 12G -multi -wo NUM_THREADS=16 -tr $res $res -tap -r average -of netCDF $infile tmp.nc
-
-# infile=$datadir/average_soil_and_sedimentary-deposit_thickness.tif
+#   echo "reproject $i $infile"
 # 
-# gdalwarp -overwrite -t_srs $proj -te $extent -wm 12G -multi -wo NUM_THREADS=16 -tr $res $res -tap -r med -of netCDF $infile tmp.nc
-
-# gdalwarp -overwrite -t_srs $proj -te $extent -wm 12G -multi -wo NUM_THREADS=16 -tr $res $res -tap -r mode -of netCDF $infile tmp.nc
-
-# exit
+#   gdalwarp --quiet -overwrite -t_srs $proj -te $extent -wm 12G -multi -wo NUM_THREADS=16 -tr $res $res -tap -r average -of netCDF $datadir/$infile tmp$i.nc
+#   
+#   let i++
 # 
-# ./pastesoilcode tmp.nc $outfile thickness
+# done
 
-./makethickness $outfile
+./makethickness tmp1.nc tmp2.nc tmp3.nc $outfile
 
 # -----
 # 7) add coordinates
@@ -176,4 +191,21 @@ done
 rm tmp.nc
 
 echo "finished!"
+
+
+
+# SCRAP CODE
+
+# infile=$datadir/hill-slope_valley-bottom.tif  # upland_valley-bottom_and_lowland_sedimentary_deposit_thickness.tif # upland_hill-slope_soil_thickness.tif
+# 
+
+# infile=$datadir/average_soil_and_sedimentary-deposit_thickness.tif
+# 
+# gdalwarp -overwrite -t_srs $proj -te $extent -wm 12G -multi -wo NUM_THREADS=16 -tr $res $res -tap -r med -of netCDF $infile tmp.nc
+
+# gdalwarp -overwrite -t_srs $proj -te $extent -wm 12G -multi -wo NUM_THREADS=16 -tr $res $res -tap -r mode -of netCDF $infile tmp.nc
+
+# exit
+# 
+# ./pastesoilcode tmp.nc $outfile thickness
 

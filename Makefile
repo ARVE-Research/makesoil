@@ -31,6 +31,8 @@ NCPASTE_OBJS = ncpaste.o
 
 PASTECOORDS_OBJS = pastecoords.o
 
+MAKETHICKNESS_OBJS = makethickness.o
+
 SOILCALC_OBJS = parametersmod.o     \
                 pedotransfermod.o  \
                 soilpropertiesmod.o \
@@ -52,7 +54,7 @@ SOILCALC_OBJS = parametersmod.o     \
 %.o : %.F90
 	$(FC) $(FCFLAGS) -c -o $(*F).o $(CPPFLAGS) $<
 
-all::	pastesoilcode ncpaste pastesoil pastecoords soilcalc
+all::	pastesoilcode ncpaste pastesoil pastecoords makethickness soilcalc
 
 pastesoilcode: $(PASTESOILCODE_OBJS)
 	$(FC) $(FCFLAGS) -o pastesoilcode $(PASTESOILCODE_OBJS) $(LDFLAGS) $(LIBS)
@@ -65,6 +67,9 @@ ncpaste: $(NCPASTE_OBJS)
 
 pastecoords: $(PASTECOORDS_OBJS)
 	$(FC) $(FCFLAGS) -o pastecoords $(PASTECOORDS_OBJS) $(LDFLAGS) $(LIBS)
+
+makethickness: $(MAKETHICKNESS_OBJS)
+	$(FC) $(FCFLAGS) -o makethickness $(MAKETHICKNESS_OBJS) $(LDFLAGS) $(LIBS)
 
 soilcalc: $(SOILCALC_OBJS)
 	$(FC) $(FCFLAGS) -o soilcalc $(SOILCALC_OBJS) $(LDFLAGS) $(LIBS)
