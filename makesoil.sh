@@ -22,7 +22,7 @@
 # example:
 
 # outdir=../global30minute
-outdir=global_0.25
+outdir=global_0.50
 
 # specify a target directory where the raw data is stored (or should be downloaded), 
 # example:
@@ -49,7 +49,7 @@ extent="-180. -90.  180. 90."      #  <xmin> <ymin> <xmax> <ymax>
 
 res=5000.
 
-min=15.                           # target resolution in MINUTES for lat-lon or METERS for projected grids
+min=30.                           # target resolution in MINUTES for lat-lon or METERS for projected grids
 
 if [ $proj == "EPSG:4326" ]
 then
@@ -84,7 +84,7 @@ make
 
 infile=$datadir/TAXNWRB_250m_ll.tif
 
-gdalwarp --quiet -overwrite -t_srs $proj -te $extent -wm 12G -multi -wo NUM_THREADS=16 -tr $res $res -tap -r mode -of netCDF $infile tmp.nc
+gdalwarp --quiet -overwrite -t_srs $proj -te $extent -wm 12G -multi -wo NUM_THREADS=16 -tr $res $res -tap -r mode -dstnodata 0 -of netCDF $infile tmp.nc
 
 # get the dimensions of the target file
 
@@ -122,15 +122,31 @@ ncgen -4 -o $outfile soildata.cdl
 # -----
 # 4) paste WRB code into output
 
-./pastesoilcode tmp.nc $outfile WRB
+# extrapolate to missing areas (urban and some water)
+
+cdo -s setmisstonn tmp.nc tmp1.nc
+
+# clip to landmask
+
+./masklandmask_byte /Volumes/Amalanchier/datasets/classfrac_30m.nc tmp1.nc
+
+./pastesoilcode tmp1.nc $outfile WRB
 
 # 5) paste USDA soil class into output
 
 infile=$datadir/TAXOUSDA_250m_ll.tif
 
-gdalwarp --quiet -overwrite -t_srs $proj -te $extent -wm 12G -multi -wo NUM_THREADS=16 -tr $res $res -tap -r mode -of netCDF $infile tmp.nc
+gdalwarp --quiet -overwrite -t_srs $proj -te $extent -wm 12G -multi -wo NUM_THREADS=16 -tr $res $res -tap -r mode -dstnodata 0 -of netCDF $infile tmp.nc
 
-./pastesoilcode tmp.nc $outfile USDA
+# extrapolate to missing areas (urban and some water)
+
+cdo -s setmisstonn tmp.nc tmp1.nc
+
+# clip to landmask
+
+./masklandmask_byte /Volumes/Amalanchier/datasets/classfrac_30m.nc tmp1.nc $outfile
+
+./pastesoilcode tmp1.nc $outfile USDA
 
 # -----
 # 6) paste soil depth into output
@@ -143,13 +159,13 @@ echo "make soil depth"
 # 
 #   echo "reproject $i $infile"
 # 
-#   gdalwarp --quiet -overwrite -t_srs $proj -te $extent -wm 12G -multi -wo NUM_THREADS=16 -tr $res $res -tap -r average -of netCDF $datadir/$infile tmp$i.nc
+#   gdalwarp --quiet -overwrite -t_srs $proj -te $extent -wm 12G -multi -wo NUM_THREADS=16 -tr $res $res -tap -r average -of netCDF $datadir/$infile depth$i.nc
 #   
 #   let i++
 # 
 # done
 
-./makethickness tmp1.nc tmp2.nc tmp3.nc $outfile
+./makethickness depth1.nc depth2.nc depth3.nc $outfile
 
 # -----
 # 7) add coordinates
@@ -172,8 +188,18 @@ do
     gdalwarp --quiet -overwrite -t_srs $proj -te $extent -wm 12G -multi -wo NUM_THREADS=16 -tr $res $res -tap -r mode -of netCDF $infile tmp.nc
     
     ncatted -a scale_factor,Band1,c,d,0.1 tmp.nc
+    
+    # extrapolate basic input variables to missing areas (urban and some water)
+    
+    cdo -s setmisstonn tmp.nc tmp1.nc
+    
+    # clip to landmask
+    
+    ./masklandmask /Volumes/Amalanchier/datasets/classfrac_30m.nc tmp1.nc
+    
+    # past into output
 
-    ./ncpaste tmp.nc $outfile $var $l
+    ./ncpaste tmp1.nc $outfile $var $l
   
     let l++    
 
@@ -190,22 +216,6 @@ done
 
 rm tmp.nc
 
+# rm tmp*.nc  # to remove the intermediate soil depth files
+
 echo "finished!"
-
-
-
-# SCRAP CODE
-
-# infile=$datadir/hill-slope_valley-bottom.tif  # upland_valley-bottom_and_lowland_sedimentary_deposit_thickness.tif # upland_hill-slope_soil_thickness.tif
-# 
-
-# infile=$datadir/average_soil_and_sedimentary-deposit_thickness.tif
-# 
-# gdalwarp -overwrite -t_srs $proj -te $extent -wm 12G -multi -wo NUM_THREADS=16 -tr $res $res -tap -r med -of netCDF $infile tmp.nc
-
-# gdalwarp -overwrite -t_srs $proj -te $extent -wm 12G -multi -wo NUM_THREADS=16 -tr $res $res -tap -r mode -of netCDF $infile tmp.nc
-
-# exit
-# 
-# ./pastesoilcode tmp.nc $outfile thickness
-
