@@ -1,6 +1,12 @@
 module pedotransfermod
 
 ! module containing the pedotransfer functions of Balland et al. (2008) as adjusted and modified by Sandoval et al. (2024)
+! references:
+! Balland, V., Pollacco, J. A. P., & Arp, P. A. (2008). Modeling soil hydraulic properties for a wide range of soil conditions.
+!   Ecological Modelling, 219(3-4), 300-316. doi:10.1016/j.ecolmodel.2008.07.009
+! Sandoval, D., Prentice, I. C., & Nóbrega, R. L. B. (2024). 
+!   Simple process-led algorithms for simulating habitats (SPLASH v.2.0): robust calculations of water and energy fluxes. 
+!   Geoscientific Model Development, 17(10), 4229-4309. doi:10.5194/gmd-17-4229-2024
 
 use parametersmod, only : sp
 
@@ -196,7 +202,7 @@ implicit none
 real(sp), intent(in) :: Tsat  ! soil porosity (units)
 real(sp), intent(in) :: clay  ! clay content (mass fraction)
 real(sp), intent(in) :: sand  ! sand content (mass fraction)
-real(sp), intent(in) :: orgm   ! soil organic matter content (mass fraction)
+real(sp), intent(in) :: orgm  ! soil organic matter content (mass fraction)
 
 ! parameters
 
@@ -253,10 +259,10 @@ implicit none
 
 real(sp), intent(in) :: sand  ! sand content (mass fraction)
 real(sp), intent(in) :: clay  ! clay content (mass fraction)
-real(sp), intent(in) :: orgm   ! sand content (mass fraction)
+real(sp), intent(in) :: orgm  ! organic matter content (mass fraction)
 real(sp), intent(in) :: Db    ! bulk density (g cm-3) 
-real(sp), intent(in) :: Tsat  ! sand content (mass fraction)
-real(sp), intent(in) :: T33   ! sand content (mass fraction)
+real(sp), intent(in) :: Tsat  ! porosity
+real(sp), intent(in) :: T33   ! water contentent
 real(sp), intent(in) :: T1500 ! sand content (mass fraction)
 
 ! parameters
