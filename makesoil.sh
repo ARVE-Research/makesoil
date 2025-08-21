@@ -29,6 +29,12 @@ outdir=global_0.50
 
 datadir=/Volumes/Amalanchier/datasets/soils
 
+# landmask file - this script requires a netCDF file containing the fraction of every gridcell that is land
+# this can be generated using other datasets such as the G3WBM global water map :
+# https://hydro.iis.u-tokyo.ac.jp/~yamadai/G3WBM/index.html
+
+landfrac=$datadir/classfrac_30m.nc
+
 # set to true if the raw data should be downloaded
 
 getdata=false
@@ -128,7 +134,7 @@ cdo -s setmisstonn tmp.nc tmp1.nc
 
 # clip to landmask
 
-./masklandmask_byte /Volumes/Amalanchier/datasets/classfrac_30m.nc tmp1.nc
+./masklandmask_byte $landfrac tmp1.nc
 
 ./pastesoilcode tmp1.nc $outfile WRB
 
@@ -144,26 +150,34 @@ cdo -s setmisstonn tmp.nc tmp1.nc
 
 # clip to landmask
 
-./masklandmask_byte /Volumes/Amalanchier/datasets/classfrac_30m.nc tmp1.nc $outfile
+./masklandmask_byte $landfrac tmp1.nc $outfile
 
 ./pastesoilcode tmp1.nc $outfile USDA
 
 # -----
 # 6) paste soil depth into output
 
+# the original soil/regolith depth datasets are:
+#   upland_valley-bottom_and_lowland_sedimentary_deposit_thickness.tif 
+#   upland_hill-slope_soil_thickness.tif 
+#   hill-slope_valley-bottom.tif
+# These files can be downloaded from NASA Earthdata at the following doi url:
+# https://doi.org/10.3334/ORNLDAAC/1304
+# I cannot find an easy way to automate this download as it requires a login
+
 echo "make soil depth"
 
-# i=1
-# for infile in upland_valley-bottom_and_lowland_sedimentary_deposit_thickness.tif upland_hill-slope_soil_thickness.tif hill-slope_valley-bottom.tif
-# do
-# 
-#   echo "reproject $i $infile"
-# 
-#   gdalwarp --quiet -overwrite -t_srs $proj -te $extent -wm 12G -multi -wo NUM_THREADS=16 -tr $res $res -tap -r average -of netCDF $datadir/$infile depth$i.nc
-#   
-#   let i++
-# 
-# done
+i=1
+for infile in upland_valley-bottom_and_lowland_sedimentary_deposit_thickness.tif upland_hill-slope_soil_thickness.tif hill-slope_valley-bottom.tif
+do
+
+  echo "reproject $i $infile"
+
+  gdalwarp --quiet -overwrite -t_srs $proj -te $extent -wm 12G -multi -wo NUM_THREADS=16 -tr $res $res -tap -r average -of netCDF $datadir/$infile depth$i.nc
+  
+  let i++
+
+done
 
 ./makethickness depth1.nc depth2.nc depth3.nc $outfile
 
@@ -195,7 +209,7 @@ do
     
     # clip to landmask
     
-    ./masklandmask /Volumes/Amalanchier/datasets/classfrac_30m.nc tmp1.nc
+    ./masklandmask $landfrac tmp1.nc
     
     # past into output
 
