@@ -1,4 +1,4 @@
-#!/opt/local/bin/bash
+#!/usr/bin/bash
 
 # This script generates a netCDF map of derived soil properties file at resolutions of 30" (1km) and coarser.
 # 
@@ -11,7 +11,7 @@
 # it also uses a 250m raster of WRB soil name that informs the pedotransfer functions.
 # 
 # The following software is REQUIRED to run the script's programs: 
-#    cURL GDAL GMT NCO netCDF netCDF-Fortran
+#    cURL GDAL GMT CDO NCO netCDF netCDF-Fortran
 # 
 # The raw soil data could be downloaded in advance, otherwise a data download script is also provided
 
@@ -22,18 +22,20 @@
 # example:
 
 # outdir=../global30minute
-outdir=global_0.50
+outdir=/home/terraces/datasets/soils/NA5km
 
 # specify a target directory where the raw data is stored (or should be downloaded), 
 # example:
 
-datadir=/Volumes/Amalanchier/datasets/soils
+datadir=/home/terraces/datasets/soils/soilgrids1km_v2020
 
 # landmask file - this script requires a netCDF file containing the fraction of every gridcell that is land
 # this can be generated using other datasets such as the G3WBM global water map :
 # https://hydro.iis.u-tokyo.ac.jp/~yamadai/G3WBM/index.html
 
-landfrac=$datadir/classfrac_30m.nc
+# landfrac=$datadir/classfrac_30m.nc
+
+landfrac=/home/terraces/datasets/hydrography/G3WBM/NAlandfrac.nc
 
 # set to true if the raw data should be downloaded
 
@@ -43,19 +45,19 @@ getdata=false
 
 # specify a map projection using an EPSG code, proj4 string, or external file
 
-proj="EPSG:4326"  # example: unprojected lon-lat
+# proj="EPSG:4326"  # example: unprojected lon-lat
 
-# proj="NAlaea.prj"
+proj="/home/terraces/datasets/climate/climateNA/v730/prismdat/NAlaea.prj"
 
 # specify the map extent and resolution
 
-extent="-180. -90.  180. 90."      #  <xmin> <ymin> <xmax> <ymax>
+# extent="-180. -90.  180. 90."      #  <xmin> <ymin> <xmax> <ymax>
 
-# extent="-4350000. -3885000.  3345000. 3780000."      #  <xmin> <ymin> <xmax> <ymax>
+extent="-4350000. -3885000.  3345000. 3780000."      #  <xmin> <ymin> <xmax> <ymax>
 
 res=5000.
 
-min=30.                           # target resolution in MINUTES for lat-lon or METERS for projected grids
+# min=30.                           # target resolution in MINUTES for lat-lon or METERS for projected grids
 
 if [ $proj == "EPSG:4326" ]
 then
