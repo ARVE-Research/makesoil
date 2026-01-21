@@ -17,7 +17,7 @@ public :: fDb
 public :: fTsat
 public :: fT33
 public :: fT1500
-public :: fKsat
+public :: calcKsat
 
 ! SoilGrids map legend for USDA soil orders
 ! Histosols: 5,10-13
@@ -245,9 +245,9 @@ end function fT1500
 
 ! ----------------------------
 
-real(sp) function fKsat(sand,clay,orgm,Db,Tsat,T33,T1500)
+subroutine calcKsat(sand,clay,orgm,Db,Tsat,T33,T1500,lambda,Ksat)
 
-! function to estimate saturated hydraulic conductivity (Sandoval et al., 2024) (units)
+! function to estimate saturated hydraulic conductivity (Sandoval et al., 2024) (mm h-1)
 ! NB this equation comes from the code on github in the file splash.point.R, lines 351-363
 ! because eqn A25d in the GMD paper does not appear to produce valid results.
 
@@ -257,13 +257,15 @@ implicit none
 
 ! arguments
 
-real(sp), intent(in) :: sand  ! sand content (mass fraction)
-real(sp), intent(in) :: clay  ! clay content (mass fraction)
-real(sp), intent(in) :: orgm  ! organic matter content (mass fraction)
-real(sp), intent(in) :: Db    ! bulk density (g cm-3) 
-real(sp), intent(in) :: Tsat  ! porosity
-real(sp), intent(in) :: T33   ! water contentent
-real(sp), intent(in) :: T1500 ! sand content (mass fraction)
+real(sp), intent(in)  :: sand   ! sand content (mass fraction)
+real(sp), intent(in)  :: clay   ! clay content (mass fraction)
+real(sp), intent(in)  :: orgm   ! organic matter content (mass fraction)
+real(sp), intent(in)  :: Db     ! bulk density (g cm-3) 
+real(sp), intent(in)  :: Tsat   ! porosity
+real(sp), intent(in)  :: T33    ! fractional water contentent at field capacity
+real(sp), intent(in)  :: T1500  ! sand content (mass fraction)
+real(sp), intent(out) :: lambda ! pore size distribution index (unitless)
+real(sp), intent(out) :: Ksat   ! saturated hydraulic conductivity (mm h-1)
 
 ! parameters
 
@@ -282,21 +284,89 @@ real(sp), parameter :: num   = l1500 - l33
 
 ! local variables
 
-real(sp) :: Tdrain
-real(sp) :: B
-real(sp) :: lambda
+real(sp) :: Tdrain  ! water content 
+real(sp) :: B       ! shape coefficient of the water retention curve = 1 / lambda (Sandoval eqn 56c)
 
 ! ----
 
 Tdrain = Tsat - T33
 
-B = num / (log(T33) - log(T1500))
+B = num / (log(T33) - log(T1500))  ! Saxton and Rawls eqn 15
 
 lambda = 1. / B
 
-fKsat = Ksmax / (1. + exp(k2 * sand + k3 * Db + k4 * clay + k5 * Tdrain + k6 * orgm + k7 * lambda))
+Ksat = Ksmax / (1. + exp(k2 * sand + k3 * Db + k4 * clay + k5 * Tdrain + k6 * orgm + k7 * lambda))
 
-end function fKsat
+end subroutine calcKsat
+
+! ----------------------------
+
+real(sp) function fPsi_e(sand,clay,orgm,T33,lambda)
+
+! Equations to estimate the "tension at air entry (bubbling pressure)" of a soil (mm) from
+! Saxton, K. E., & Rawls, W. J. (2006). Soil Water Characteristic Estimates by Texture and Organic Matter
+! for Hydrologic Solutions. Soil Science Society of America Journal, 70(5), 1569. doi:10.2136/sssaj2005.0117
+! used in Sandoval et al. (2024) eqn 29 (called psi_b by Sandoval)
+! NB The Saxton and Rawls paper calls for inputs in mass percent, but it appears the equations require fraction 
+! to return realistic outputs.
+
+! As Sandoval notes in the rsplash code (lines 365-383) the Saxton and Rawls regression sometimes leads to
+! unphysical (negative) values for air entry tension. This is also apparent in Saxton and Rawls Fig. 1D
+! Negative values for air-entry pressure would imply hydrophobic soils and have been observed experimentally
+! but for this model, Sandoval sets the minimum air entry pressure equal to the Saxton and Rawls "A" value,
+! which represents the air entry pressure at the intercept of the log-log retention curve.
+
+implicit none
+
+! arguments
+
+real(sp), intent(in) :: sand   ! sand content (mass fraction)
+real(sp), intent(in) :: clay   ! clay content (mass fraction)
+real(sp), intent(in) :: orgm   ! organic matter content (mass fraction)
+real(sp), intent(in) :: T33    ! soil water content at field capacity (volume fraction)
+real(sp), intent(in) :: lambda ! pore size distribution index (unitless)
+
+! parameters
+
+real(sp), parameter :: kPa2mm = -1000. / 9.80665 ! source https://en.wikipedia.org/wiki/Centimetre_or_millimetre_of_water
+real(sp), parameter :: ln33 = log(33.)
+
+! local variables
+
+real(sp) :: A
+real(sp) :: B
+real(sp) :: TS33t
+real(sp) :: TS33
+real(sp) :: psi_et
+
+real(sp) :: psi_e
+
+! ----
+
+! Saxton and Rawls eqn 3
+
+TS33t = 0.278 * sand + 0.034 * clay + 0.022 * orgm - 0.018 * sand * orgm - 0.027 * clay * orgm - 0.584 * sand * clay + 0.078 
+
+TS33 = TS33t + (0.636 * TS33t - 0.107)
+
+! Saxton and Rawls eqn 4
+
+psi_et = -21.67 * sand - 27.93 * clay - 81.97 * TS33 + 71.12 * sand * TS33 + 8.29 * clay * TS33 + 14.05 * sand * clay + 27.16
+
+psi_e = psi_et + (0.02 * psi_et**2 - 0.113 * psi_et - 0.70)
+
+if (psi_e < 0.) then
+
+  B = 1. / lambda
+  A = exp(ln33 + B * log(T33))  ! Saxton and Rawls eqn. 14
+
+  psi_e = A
+
+end if
+
+fPsi_e = psi_e * kPa2mm
+
+end function fPsi_e
 
 ! ----------------------------
 

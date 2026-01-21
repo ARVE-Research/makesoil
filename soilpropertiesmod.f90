@@ -18,6 +18,8 @@ type layerinfo
   real(sp) :: T1500   ! water content at -1500 KPa tension (fraction)
   real(sp) :: whc     ! water holding capacity defined as -33 - -1500 KPa tension (fraction)
   real(sp) :: Ksat    ! saturated hydraulic conductivity (mm h-1)
+  real(sp) :: psi_e   ! tension at air entry (bubbling pressure) (kPa)
+  real(sp) :: lambda  ! pore size distribution index (unitless) also called 1/B
 end type layerinfo
 
 type soildata
@@ -35,7 +37,7 @@ contains
 subroutine soilproperties(soil)
 
 use parametersmod,   only : sp
-use pedotransfermod, only : fDp,fDb,fTsat,fT33,fT1500,fKsat
+use pedotransfermod, only : fDp,fDb,fTsat,fT33,fT1500,calcKsat,fPsi_e
 
 implicit none
 
@@ -61,6 +63,8 @@ real(sp) :: Tsat
 real(sp) :: T33
 real(sp) :: T1500
 
+real(sp) :: psi_e
+real(sp) :: lambda
 real(sp) :: Ksat
 
 integer :: nl
@@ -91,18 +95,21 @@ do l = 1,nl
   T33 = fT33(Tsat,clay,sand,orgm)
     
   T1500 = fT1500(T33,clay)
+
+  call calcKsat(sand,clay,orgm,Db,Tsat,T33,T1500,lambda,Ksat)
   
-  ! Ksat = fKsat(Dp,Db,sand) * 10.  ! convert to mm h-1
-  Ksat = fKsat(sand,clay,orgm,Db,Tsat,T33,T1500)
+  psi_e = fPsi_e(sand,clay,orgm,T33,lambda)
 
   ! ---
 
-  soil%layer(l)%bulk  = Db
-  soil%layer(l)%Tsat  = Tsat
-  soil%layer(l)%T33   = T33
-  soil%layer(l)%T1500 = T1500
-  soil%layer(l)%whc   = T33 - T1500
-  soil%layer(l)%Ksat  = Ksat
+  soil%layer(l)%bulk   = Db
+  soil%layer(l)%Tsat   = Tsat
+  soil%layer(l)%T33    = T33
+  soil%layer(l)%T1500  = T1500
+  soil%layer(l)%whc    = T33 - T1500
+  soil%layer(l)%Ksat   = Ksat
+  soil%layer(l)%lambda = lambda
+  soil%layer(l)%psi_e  = psi_e
 
 end do
 

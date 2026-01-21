@@ -226,6 +226,26 @@ variables:
     Ksat:_Storage = "chunked" ;
     Ksat:_ChunkSizes = 1, ylen, xlen ;
 
+  float lambda(depth, lat, lon) ;
+    lambda:long_name = "pore size distribution index" ;
+    lambda:units = "unitless" ;
+    lambda:_FillValue = -9999.f ;
+    lambda:missing_value = -9999.f ;
+    lambda:actual_range = 100.f, -100.f ;
+    lambda:source = "Sandoval et al., after Saxton and Rawls (2006; eqn 18)" ;
+    lambda:_Storage = "chunked" ;
+    lambda:_ChunkSizes = 1, ylen, xlen ;
+
+  float psi_e(depth, lat, lon) ;
+    psi_e:long_name = "tension at air entry" ;
+    psi_e:units = "mm" ;
+    psi_e:_FillValue = -9999.f ;
+    psi_e:missing_value = -9999.f ;
+    psi_e:actual_range = 100.f, -100.f ;
+    psi_e:source = "Saxton and Rawls (2006; eqn 4) (converted to mm)" ;
+    psi_e:_Storage = "chunked" ;
+    psi_e:_ChunkSizes = 1, ylen, xlen ;
+
 // global attributes:
     :Conventions = "CF-1.11" ;
     :title = "Primary and derived soil properties" ;

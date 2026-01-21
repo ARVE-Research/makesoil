@@ -42,7 +42,8 @@ real(sp), allocatable, dimension(:,:,:) :: T33
 real(sp), allocatable, dimension(:,:,:) :: T1500
 real(sp), allocatable, dimension(:,:,:) :: whc
 real(sp), allocatable, dimension(:,:,:) :: Ksat
-
+real(sp), allocatable, dimension(:,:,:) :: lambda
+real(sp), allocatable, dimension(:,:,:) :: psi_e
 
 real(sp), allocatable, dimension(:) :: zpos
 real(sp), allocatable, dimension(:) :: dz
@@ -144,13 +145,17 @@ allocate(T33(xlen,ylen,nl))
 allocate(T1500(xlen,ylen,nl))
 allocate(whc(xlen,ylen,nl))
 allocate(Ksat(xlen,ylen,nl))
+allocate(lambda(xlen,ylen,nl))
+allocate(psi_e(xlen,ylen,nl))
 
-bulk  = rmissing
-Tsat  = rmissing
-T33   = rmissing
-T1500 = rmissing
-whc   = rmissing
-Ksat  = rmissing
+bulk   = rmissing
+Tsat   = rmissing
+T33    = rmissing
+T1500  = rmissing
+whc    = rmissing
+Ksat   = rmissing
+lambda = rmissing
+psi_e = rmissing
 
 write(0,*)'calculating'
 
@@ -193,12 +198,14 @@ do y = 1,ylen
     
     call soilproperties(soil)      
     
-    bulk(x,y,:)  = soil%layer%bulk
-    Tsat(x,y,:)  = soil%layer%Tsat
-    T33(x,y,:)   = soil%layer%T33
-    T1500(x,y,:) = soil%layer%T1500
-    whc(x,y,:)   = soil%layer%whc
-    Ksat(x,y,:)  = soil%layer%Ksat
+    bulk(x,y,:)   = soil%layer%bulk
+    Tsat(x,y,:)   = soil%layer%Tsat
+    T33(x,y,:)    = soil%layer%T33
+    T1500(x,y,:)  = soil%layer%T1500
+    whc(x,y,:)    = soil%layer%whc
+    Ksat(x,y,:)   = soil%layer%Ksat
+    lambda(x,y,:) = soil%layer%lambda
+    psi_e(x,y,:)  = soil%layer%psi_e
     
     if (any(soil%layer%whc <= 0)) then
 
@@ -315,7 +322,39 @@ write(0,*)'Ksat range: ',actual_range
 status = nf90_put_att(ncid,varid,'actual_range',actual_range)
 if (status /= nf90_noerr) call handle_err(status)
 
-status = nf90_put_var(ncid,varid,ksat)
+status = nf90_put_var(ncid,varid,Ksat)
+if (status /= nf90_noerr) call handle_err(status)
+
+! --
+! lambda (pore size distribution index)
+
+status = nf90_inq_varid(ncid,'lambda',varid)
+if (status /= nf90_noerr) call handle_err(status)
+
+actual_range = [minval(lambda,mask=lambda/=rmissing),maxval(lambda,mask=lambda/=rmissing)]
+
+write(0,*)'lambda range: ',actual_range
+
+status = nf90_put_att(ncid,varid,'actual_range',actual_range)
+if (status /= nf90_noerr) call handle_err(status)
+
+status = nf90_put_var(ncid,varid,lambda)
+if (status /= nf90_noerr) call handle_err(status)
+
+! --
+! air-entry tension
+
+status = nf90_inq_varid(ncid,'psi_e',varid)
+if (status /= nf90_noerr) call handle_err(status)
+
+actual_range = [minval(psi_e,mask=psi_e/=rmissing),maxval(psi_e,mask=psi_e/=rmissing)]
+
+write(0,*)'psi_e range: ',actual_range
+
+status = nf90_put_att(ncid,varid,'actual_range',actual_range)
+if (status /= nf90_noerr) call handle_err(status)
+
+status = nf90_put_var(ncid,varid,psi_e)
 if (status /= nf90_noerr) call handle_err(status)
 
 ! -------------------------------------------------------
