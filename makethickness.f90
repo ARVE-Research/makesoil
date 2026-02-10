@@ -36,6 +36,8 @@ integer :: y
 
 real(sp), dimension(2) :: actual_range
 
+real(sp), parameter :: missing = -9999.
+
 ! ---------
 
 call getarg(1,lowlandfile)
@@ -108,7 +110,7 @@ if (status /= nf90_noerr) call handle_err(status)
 
 allocate(thickness(xlen,ylen))
 
-thickness = -9999.
+thickness = missing
 
 do y = 1,ylen
   do x = 1,xlen
@@ -132,8 +134,8 @@ do y = 1,ylen
   end do
 end do
 
-actual_range(1) = minval(thickness,mask=thickness /= -9999.)
-actual_range(2) = maxval(thickness,mask=thickness /= -9999.)
+actual_range(1) = minval(thickness,mask=thickness /= missing)
+actual_range(2) = maxval(thickness,mask=thickness /= missing)
 
 write(0,*)'soil depth actual range',actual_range
 
@@ -144,13 +146,13 @@ call getarg(4,outfile)
 status = nf90_open(outfile,nf90_write,ncid)
 if (status /= nf90_noerr) call handle_err(status)
 
-status = nf90_inq_varid(ncid,'thickness',varid)
+status = nf90_inq_varid(ncid,'Band1',varid)
 if (status /= nf90_noerr) call handle_err(status)
 
 status = nf90_put_var(ncid,varid,thickness)
 if (status /= nf90_noerr) call handle_err(status)
 
-status = nf90_put_att(ncid,varid,'actual_range',actual_range)
+status = nf90_put_att(ncid,varid,'_FillValue',missing)
 if (status /= nf90_noerr) call handle_err(status)
 
 status = nf90_close(ncid)

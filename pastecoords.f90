@@ -35,6 +35,9 @@ real(sp), parameter, dimension(nl) :: dz   = [ 5.,  10., 15.,  30., 40., 100. ]
 
 integer :: l
 
+character(4) :: varname_lon = 'lon'
+character(4) :: varname_lat = 'lat'
+
 real(sp), dimension(2,nl) :: layer_bnds
 
 ! ------------------------------------------------------------------------------------------------------------
@@ -59,14 +62,20 @@ status = nf90_open(infile,nf90_nowrite,ncid)
 if (status /= nf90_noerr) call handle_err(status)
 
 status = nf90_inq_dimid(ncid,'lon',dimid)
-if (status == nf90_ebaddim) status = nf90_inq_dimid(ncid,'x',dimid)
+if (status == nf90_ebaddim) then
+  status = nf90_inq_dimid(ncid,'x',dimid)
+  varname_lon = 'x'
+end if
 if (status /= nf90_noerr) call handle_err(status)
 
 status = nf90_inquire_dimension(ncid,dimid,len=xlen)
 if (status /= nf90_noerr) call handle_err(status)
 
 status = nf90_inq_dimid(ncid,'lat',dimid)
-if (status == nf90_ebaddim) status = nf90_inq_dimid(ncid,'y',dimid)
+if (status == nf90_ebaddim) then
+  status = nf90_inq_dimid(ncid,'y',dimid)
+  varname_lat = 'y'
+end if
 if (status /= nf90_noerr) call handle_err(status)
 
 status = nf90_inquire_dimension(ncid,dimid,len=ylen)
@@ -115,7 +124,7 @@ write(0,*)'writing coords'
 status = nf90_open(outfile,nf90_write,ncid)
 if (status /= nf90_noerr) call handle_err(status)
 
-status = nf90_inq_varid(ncid,'lon',varid)
+status = nf90_inq_varid(ncid,varname_lon,varid)
 if (status /= nf90_noerr) call handle_err(status)
 
 status = nf90_put_var(ncid,varid,lon)
@@ -124,7 +133,7 @@ if (status /= nf90_noerr) call handle_err(status)
 status = nf90_put_att(ncid,varid,'actual_range',lonrange)
 if (status /= nf90_noerr) call handle_err(status)
 
-status = nf90_inq_varid(ncid,'lat',varid)
+status = nf90_inq_varid(ncid,varname_lat,varid)
 if (status /= nf90_noerr) call handle_err(status)
 
 status = nf90_put_var(ncid,varid,lat)

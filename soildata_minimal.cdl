@@ -1,0 +1,143 @@
+netcdf soildata {
+
+dimensions:
+	x = 2340 ;
+	y = 2700 ;
+  depth = UNLIMITED ;
+  nb = 2 ;
+
+variables:
+
+	double x(x) ;
+		x:standard_name = "projection_x_coordinate" ;
+		x:units = "meter" ;
+		x:axis = "X" ;
+		x:actual_range = 0.,0. ;
+		x:axis = "X" ;
+		x:_Storage = "contiguous" ;
+
+	double y(y) ;
+		y:standard_name = "projection_y_coordinate" ;
+		y:units = "meter" ;
+		y:axis = "Y" ;
+		y:actual_range = 0.,0. ;
+		y:axis = "Y" ;
+		y:_Storage = "contiguous" ;
+
+	double lon(y, x) ;
+		lon:long_name = "longitude" ;
+		lon:units = "degrees_east" ;
+		lon:actual_range = -180., 180. ;
+		lon:grid_mapping = "crs" ;
+
+	double lat(y, x) ;
+		lat:long_name = "latitude" ;
+		lat:units = "degrees_north" ;
+		lat:actual_range = -90., 90. ;
+		lat:grid_mapping = "crs" ;
+
+  float depth(depth) ;
+    depth:long_name = "vertical position of layer midpoint (below soil surface)" ;
+    depth:units = "cm" ;
+    depth:positive = "down" ;
+    depth:bounds = "layer_bnds" ;
+    depth:axis = "Z" ;
+    
+  float layer_bnds(depth,nb) ;
+    layer_bnds:units = "cm" ;
+    layer_bnds:positive = "down" ;
+
+  float dz(depth) ;
+    dz:long_name = "soil layer thickness" ;
+    dz:units = "cm" ;
+
+  byte USDA(y, x) ;
+    USDA:long_name = "Predicted USDA 2014 suborder classes" ;
+    USDA:units = "class" ;
+    USDA:_FillValue = -1b ;
+    USDA:missing_value = -1b ;
+    USDA:actual_range = 0b, -1b ;
+    USDA:valid_range = 1b, 99b ;
+    USDA:source = "SoilGrids 2017" ;
+    USDA:_Storage = "chunked" ;
+    USDA:_ChunkSizes = 675, 585 ;
+    USDA:_DeflateLevel = 1 ;
+
+  short thickness(y, x) ;
+    thickness:long_name = "average soil and sedimentary deposit thickness" ;
+    thickness:units = "m" ;
+    thickness:_FillValue = -32768s ;
+    thickness:missing_value = -32768s ;
+    thickness:actual_range = 100.f, -100.f ;
+    thickness:scale_factor = 0.001f ;
+    thickness:add_offset = 32.767f ;
+    thickness:source = "Pelletier et al., 2016" ;
+    thickness:_Shuffle = "true" ;
+    thickness:_Storage = "chunked" ;
+    thickness:_ChunkSizes = 675, 585 ;
+    thickness:_DeflateLevel = 1 ;
+    
+  short sand(depth, y, x) ;
+    sand:long_name = "sand content by mass" ;
+    sand:units = "fraction" ;
+    sand:_FillValue = -32768s ;
+    sand:missing_value = -32768s ;
+    sand:actual_range = 100.f, -100.f ;
+    sand:valid_range = 0s, 1000s ;
+    sand:scale_factor = 0.001f ;
+    sand:source = "SoilGrids 2020" ;
+    sand:_Shuffle = "true" ;
+    sand:_Storage = "chunked" ;
+    sand:_ChunkSizes = 1, 675, 585 ;
+    sand:_DeflateLevel = 1 ;
+
+  short clay(depth, y, x) ;
+    clay:long_name = "clay content by mass" ;
+    clay:units = "fraction" ;
+    clay:_FillValue = -32768s ;
+    clay:missing_value = -32768s ;
+    clay:actual_range = 100.f, -100.f ;
+    clay:valid_range = 0s, 1000s ;
+    clay:scale_factor = 0.001f ;
+    clay:source = "SoilGrids 2020" ;
+    clay:_Shuffle = "true" ;
+    clay:_Storage = "chunked" ;
+    clay:_ChunkSizes = 1, 675, 585 ;
+    clay:_DeflateLevel = 1 ;
+
+  short cfvo(depth, y, x) ;
+    cfvo:long_name = "coarse fragments by volume" ;
+    cfvo:units = "fraction" ;
+    cfvo:_FillValue = -32768s ;
+    cfvo:missing_value = -32768s ;
+    cfvo:actual_range = 100.f, -100.f ;
+    cfvo:valid_range = 0s, 1000s ;
+    cfvo:scale_factor = 0.001f ;
+    cfvo:source = "SoilGrids 2020" ;
+    cfvo:_Shuffle = "true" ;
+    cfvo:_Storage = "chunked" ;
+    cfvo:_ChunkSizes = 1, 675, 585 ;
+    cfvo:_DeflateLevel = 1 ;
+
+  short soc(depth, y, x) ;
+    soc:long_name = "Soil organic carbon content by mass" ;
+    soc:units = "fraction" ;
+    soc:_FillValue = -32768s ;
+    soc:missing_value = -32768s ;
+    soc:actual_range = 100.f, -100.f ;
+    soc:valid_range = 0s, 10000s ;
+    soc:scale_factor = 0.0001f ;
+    soc:source = "SoilGrids 2020" ;
+    soc:_Shuffle = "true" ;
+    soc:_Storage = "chunked" ;
+    soc:_ChunkSizes = 1, 675, 585 ;
+    soc:_DeflateLevel = 1 ;
+
+// global attributes:
+    :Conventions = "CF-1.11" ;
+    :title = "Primary and derived soil properties" ;
+    :citation1 = "Hengl, T., Mendes de Jesus, J., Heuvelink, G. B., Ruiperez Gonzalez, M., Kilibarda, M., Blagotic, A., Shangguan, W., Wright, M. N., Geng, X., Bauer-Marschallinger, B., Guevara, M. A., Vargas, R., MacMillan, R. A., Batjes, N. H., Leenaars, J. G., Ribeiro, E., Wheeler, I., Mantel, S., & Kempen, B. (2017). SoilGrids250m: Global gridded soil information based on machine learning. PLoS One, 12(2), e0169748. doi:10.1371/journal.pone.0169748" ;
+    :citation2 = "Pelletier, J. D., Broxton, P. D., Hazenberg, P., Zeng, X., Troch, P. A., Niu, G. Y., Williams, Z., Brunke, M. A., & Gochis, D. (2016). A gridded global data set of soil, intact regolith, and sedimentary deposit thicknesses for regional and global land surface modeling. Journal of Advances in Modeling Earth Systems, 8(1), 41-65. doi:10.1002/2015ms000526" ;
+    :node_offset = 1 ;
+
+}
