@@ -18,6 +18,8 @@ public :: fTsat
 public :: fT33
 public :: fT1500
 public :: calcKsat
+public :: fki
+public :: fPsi_e
 
 ! SoilGrids map legend for USDA soil orders
 ! Histosols: 5,10-13
@@ -41,7 +43,7 @@ real(sp), parameter :: Dcf = 2.7  ! bulk density of coarse fragments (g cm-3)
 
 contains
 
-! ----------------------------
+! ----------------------------------------------------------------------------------------------------------------
 
 real(sp) function fDp(orgm,cfvo)
 
@@ -68,7 +70,7 @@ fDp = Dp * (1. - cfvo) + cfvo * Dcf
 
 end function fDp
 
-! ----------------------------
+! ----------------------------------------------------------------------------------------------------------------
 
 real(sp) function fDb(usda,clay,cfvo,zpos,orgm,Dp)
 
@@ -187,7 +189,7 @@ fTsat = 1. - Db / Dp
 
 end function fTsat
 
-! ----------------------------
+! ----------------------------------------------------------------------------------------------------------------
 
 real(sp) function fT33(Tsat,clay,sand,orgm)
 
@@ -217,7 +219,7 @@ fT33 = Tsat * (c + (d - c) * clay**0.5) * exp((a * sand - b * orgm) / Tsat)
 
 end function fT33
 
-! ----------------------------
+! ----------------------------------------------------------------------------------------------------------------
 
 real(sp) function fT1500(T33,clay)
 
@@ -243,9 +245,9 @@ fT1500 = T33 * (c + (d - c) * clay**0.5)
 
 end function fT1500
 
-! ----------------------------
+! ----------------------------------------------------------------------------------------------------------------
 
-subroutine calcKsat(sand,clay,orgm,Db,Tsat,T33,T1500,lambda,Ksat)
+subroutine calcKsat(sand,clay,orgm,Db,Tsat,T33,T1500,lambda,Ksat,ki)
 
 ! function to estimate saturated hydraulic conductivity (Sandoval et al., 2024) (mm h-1)
 ! NB this equation comes from the code on github in the file splash.point.R, lines 351-363
@@ -261,11 +263,12 @@ real(sp), intent(in)  :: sand   ! sand content (mass fraction)
 real(sp), intent(in)  :: clay   ! clay content (mass fraction)
 real(sp), intent(in)  :: orgm   ! organic matter content (mass fraction)
 real(sp), intent(in)  :: Db     ! bulk density (g cm-3) 
-real(sp), intent(in)  :: Tsat   ! porosity
-real(sp), intent(in)  :: T33    ! fractional water contentent at field capacity
-real(sp), intent(in)  :: T1500  ! sand content (mass fraction)
+real(sp), intent(in)  :: Tsat   ! porosity (fraction)
+real(sp), intent(in)  :: T33    ! water contentent at field capacity (fraction)
+real(sp), intent(in)  :: T1500  ! water content at wilting point (fraction)
 real(sp), intent(out) :: lambda ! pore size distribution index (unitless)
 real(sp), intent(out) :: Ksat   ! saturated hydraulic conductivity (mm h-1)
+real(sp), intent(out) :: ki     ! soil intrinsic permeability (m2)
 
 ! parameters
 
@@ -297,9 +300,40 @@ lambda = 1. / B
 
 Ksat = Ksmax / (1. + exp(k2 * sand + k3 * Db + k4 * clay + k5 * Tdrain + k6 * orgm + k7 * lambda))
 
+ki = fki(Ksat)
+
 end subroutine calcKsat
 
-! ----------------------------
+! ----------------------------------------------------------------------------------------------------------------
+
+real(sp) function fki(Ksat) ! (m2)
+
+! Function to calculate the intrinsic permeability of soil, based on Sandoval et al. (2024) eqn 32
+! following Hillel (1998) eqn 7.15 and using 25C and 101325 Pa (SATP) as the boundary conditions
+! for water viscosity and density.
+
+use parametersmod, only : sp
+
+implicit none
+
+! parameters
+
+real(sp), parameter :: g    =      9.80665  ! mean gravitational acceleration (m s-2)
+real(sp), parameter :: P    = 101325.       ! (Pa)
+real(sp), parameter :: Tair =     25.       ! (C)
+
+! argument
+
+real(sp), intent(in) :: Ksat   ! (mm hr-1)
+
+! ----
+! NB the 3.6e6 factor converts Ksat (mm h-1) to Ksat (m s-2)
+
+fki = Ksat / 3.6e6 * muwater(P,Tair) / (pwater(P,Tair) * g)
+
+end function fki
+
+! ----------------------------------------------------------------------------------------------------------------
 
 real(sp) function fPsi_e(sand,clay,orgm,T33,lambda)
 
@@ -368,6 +402,106 @@ fPsi_e = psi_e * kPa2mm
 
 end function fPsi_e
 
-! ----------------------------
+! ----------------------------------------------------------------------------------------------------------------
+
+real(sp) function pwater(P,Tair)   ! (kg m-3)
+
+! Function to calculate the density of water as a function of air temperature and pressure, based on:
+! Tanaka, M., Girard, G., Davis, R., Peuto, A., & Bignell, N. (2001). 
+! Recommended table for the density of water between 0 °C and 40 °C based on recent experimental reports. 
+! Metrologia, 38(4), 301-309. doi:10.1088/0026-1394/38/4/3
+
+use parametersmod, only : sp
+
+implicit none
+
+! arguments
+
+real(sp), intent(in) :: P     ! air pressure (Pa)
+real(sp), intent(in) :: Tair  ! air temperature (degC)
+
+! parameters
+! coefficients for density at SATP
+
+real(sp), parameter :: a1 =  -3.983035         ! degC-1
+real(sp), parameter :: a2 =    301.797         ! degC-1
+real(sp), parameter :: a3 = 522528.9           ! degC-1
+real(sp), parameter :: a4 =     69.34881       ! degC-1
+real(sp), parameter :: a5 =    999.974950      ! kg m-3
+
+! coefficients for the dissolved air correction
+
+real(sp), parameter :: s0 = -4.162 * 1.e-3     ! kg m-3
+real(sp), parameter :: s1 =  0.106 * 1.e-3     ! kg m-3 degC-1
+
+! coefficients for the pressure correction
+
+real(sp), parameter :: k0 = 50.74    * 1.e-11  ! Pa-1
+real(sp), parameter :: k1 = -0.326   * 1.e-11  ! Pa-1 C-1
+real(sp), parameter :: k2 =  0.00416 * 1.e-11  ! Pa-1 C-2
+
+! local variables
+
+real(sp) :: dairf   ! dissolved air correction factor
+real(sp) :: pfact   ! pressure correction factor
+
+! ----
+
+pfact = 1. + (k0 + k1 * tair + k2 * tair**2) * (P - 101325.)  ! pressure correction factor
+
+dairf = s0 + s1 * tair  ! dissolved air correction factor
+
+pwater = a5 * (1. - (tair + a1)**2 * (tair + a2) / (a3 * (tair + a4))) * pfact + dairf
+
+end function pwater
+
+! ----------------------------------------------------------------------------------------------------------------
+
+real(sp) function muwater(P,Tair)   ! (Pa s)
+
+! Function to calculate the viscosity of water as this quantity is influenced by pressure and temperature, after:
+! Likhachev, E. R. (2003). Dependence of Water Viscosity on Temperature and Pressure. Technical Physics, 48(4), 514-515.
+! This expression for viscosity is simpler than the Sandoval function, and is acceptable because of the limited range 
+! of temperatures and pressures present at earth surface.
+
+use parametersmod, only : sp
+
+implicit none
+
+! arguments
+
+real(sp), intent(in) :: P     ! air pressure (Pa)
+real(sp), intent(in) :: Tair  ! air temperature (degC)
+
+! parameters
+
+real(sp), parameter :: Tfreeze = 273.15       ! freezing temperature of freshwater (K)
+real(sp), parameter :: R       =   8.31446e-3 ! gas constant (kJ K-1 mol-1)
+real(sp), parameter :: E       =   4.753      ! kJ mol-1
+real(sp), parameter :: mu0     =   2.4055e-5  ! Pa s
+real(sp), parameter :: theta   = 139.7        ! K
+real(sp), parameter :: a       =   4.42e-4    ! bar-1
+real(sp), parameter :: b       =   9.565e-4   ! kJ mol-1 bar-1
+real(sp), parameter :: c       =   1.24e-2    ! K bar-1
+
+! local variables
+
+real(sp) :: T     ! air temperature (K)
+real(sp) :: Pbar  ! air pressure (bar)
+
+! ----
+! unit conversions
+
+T = Tair + Tfreeze
+
+Pbar = P * 1.e-5
+
+! Likhachev eqn 2
+
+muwater = mu0 * exp(a * Pbar + (E - b * Pbar) / (R * (T - theta - c * Pbar)))
+
+end function muwater
+
+! ----------------------------------------------------------------------------------------------------------------
 
 end module pedotransfermod
