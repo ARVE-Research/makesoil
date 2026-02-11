@@ -91,7 +91,7 @@ variables:
     sand:_ChunkSizes = 1, 675, 585 ;
     sand:_DeflateLevel = 1 ;
 
-  short silt(depth, lat, lon) ;
+  short silt(depth, y, x) ;
     silt:long_name = "silt content by mass" ;
     silt:units = "fraction" ;
     silt:_FillValue = -32768s ;
