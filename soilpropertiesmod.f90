@@ -17,9 +17,11 @@ type layerinfo
   real(sp) :: T33     ! water content at -33 KPa tension (fraction)
   real(sp) :: T1500   ! water content at -1500 KPa tension (fraction)
   real(sp) :: whc     ! water holding capacity defined as -33 - -1500 KPa tension (fraction)
-  real(sp) :: Ksat    ! saturated hydraulic conductivity (mm h-1)
-  real(sp) :: psi_e   ! tension at air entry (bubbling pressure) (kPa)
   real(sp) :: lambda  ! pore size distribution index (unitless) also called 1/B
+  real(sp) :: psi_e   ! tension at air entry (bubbling pressure) (kPa)
+  real(sp) :: psi_f   ! capillary head at the wetting front (mm)
+  real(sp) :: Ksat    ! saturated hydraulic conductivity (mm h-1)
+  real(sp) :: ki      ! intrinsic permeability (m2)
 end type layerinfo
 
 type soildata
@@ -63,9 +65,11 @@ real(sp) :: Tsat
 real(sp) :: T33
 real(sp) :: T1500
 
-real(sp) :: psi_e
 real(sp) :: lambda
+real(sp) :: psi_e
+real(sp) :: psi_f
 real(sp) :: Ksat
+real(sp) :: ki
 
 integer :: nl
 integer :: l
@@ -96,9 +100,11 @@ do l = 1,nl
     
   T1500 = fT1500(T33,clay)
 
-  call calcKsat(sand,clay,orgm,Db,Tsat,T33,T1500,lambda,Ksat)
-  
   psi_e = fPsi_e(sand,clay,orgm,T33,lambda)
+
+  psi_f = (2. + 3. * lambda) / (1. + 3. * lambda) * psi_e / 2.  ! Sandoval et al. (2024) eqn 29, NB this value will be negative
+
+  call calcKsat(sand,clay,orgm,Db,Tsat,T33,T1500,lambda,Ksat,ki)
 
   ! ---
 
@@ -107,9 +113,11 @@ do l = 1,nl
   soil%layer(l)%T33    = T33
   soil%layer(l)%T1500  = T1500
   soil%layer(l)%whc    = T33 - T1500
-  soil%layer(l)%Ksat   = Ksat
   soil%layer(l)%lambda = lambda
   soil%layer(l)%psi_e  = psi_e
+  soil%layer(l)%psi_f  = psi_f
+  soil%layer(l)%Ksat   = Ksat
+  soil%layer(l)%ki     = ki
 
 end do
 

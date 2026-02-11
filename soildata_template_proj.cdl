@@ -1,8 +1,8 @@
 netcdf soildata_calculated {
 
 dimensions:
-	x = 2340 ;
-	y = 2700 ;
+	x = XLEN ;
+	y = YLEN ;
   depth = UNLIMITED ;
   nb = 2 ;
 
@@ -60,7 +60,7 @@ variables:
     USDA:valid_range = 1b, 99b ;
     USDA:source = "SoilGrids 2017" ;
     USDA:_Storage = "chunked" ;
-    USDA:_ChunkSizes = 675, 585 ;
+    USDA:_ChunkSizes = YLEN, XLEN ;
     USDA:_DeflateLevel = 1 ;
 
   short thickness(y, x) ;
@@ -74,7 +74,7 @@ variables:
     thickness:source = "Pelletier et al., 2016" ;
     thickness:_Shuffle = "true" ;
     thickness:_Storage = "chunked" ;
-    thickness:_ChunkSizes = 675, 585 ;
+    thickness:_ChunkSizes = YLEN, XLEN ;
     thickness:_DeflateLevel = 1 ;
     
   short sand(depth, y, x) ;
@@ -88,7 +88,7 @@ variables:
     sand:source = "SoilGrids 2020" ;
     sand:_Shuffle = "true" ;
     sand:_Storage = "chunked" ;
-    sand:_ChunkSizes = 1, 675, 585 ;
+    sand:_ChunkSizes = 1, YLEN, XLEN ;
     sand:_DeflateLevel = 1 ;
 
   short clay(depth, y, x) ;
@@ -102,7 +102,7 @@ variables:
     clay:source = "SoilGrids 2020" ;
     clay:_Shuffle = "true" ;
     clay:_Storage = "chunked" ;
-    clay:_ChunkSizes = 1, 675, 585 ;
+    clay:_ChunkSizes = 1, YLEN, XLEN ;
     clay:_DeflateLevel = 1 ;
 
   short cfvo(depth, y, x) ;
@@ -116,7 +116,7 @@ variables:
     cfvo:source = "SoilGrids 2020" ;
     cfvo:_Shuffle = "true" ;
     cfvo:_Storage = "chunked" ;
-    cfvo:_ChunkSizes = 1, 675, 585 ;
+    cfvo:_ChunkSizes = 1, YLEN, XLEN ;
     cfvo:_DeflateLevel = 1 ;
 
   short soc(depth, y, x) ;
@@ -130,7 +130,7 @@ variables:
     soc:source = "SoilGrids 2020" ;
     soc:_Shuffle = "true" ;
     soc:_Storage = "chunked" ;
-    soc:_ChunkSizes = 1, 675, 585 ;
+    soc:_ChunkSizes = 1, YLEN, XLEN ;
     soc:_DeflateLevel = 1 ;
 
   float bulk(depth, y, x) ;
@@ -141,7 +141,7 @@ variables:
     bulk:actual_range = 100.f, -100.f ;
     bulk:source = "Balland et al., 2008" ;
     bulk:_Storage = "chunked" ;
-    bulk:_ChunkSizes = 1, 675, 585 ;
+    bulk:_ChunkSizes = 1, YLEN, XLEN ;
     bulk:_DeflateLevel = 1 ;
 
   float Tsat(depth, y, x) ;
@@ -152,7 +152,7 @@ variables:
     Tsat:actual_range = 100.f, -100.f ;
     Tsat:source = "Sandoval et al., 2024" ;
     Tsat:_Storage = "chunked" ;
-    Tsat:_ChunkSizes = 1, 675, 585 ;
+    Tsat:_ChunkSizes = 1, YLEN, XLEN ;
     Tsat:_DeflateLevel = 1 ;
 
   float T33(depth, y, x) ;
@@ -163,7 +163,7 @@ variables:
     T33:actual_range = 100.f, -100.f ;
     T33:source = "Sandoval et al., 2024" ;
     T33:_Storage = "chunked" ;
-    T33:_ChunkSizes = 1, 675, 585 ;
+    T33:_ChunkSizes = 1, YLEN, XLEN ;
     T33:_DeflateLevel = 1 ;
 
   float T1500(depth, y, x) ;
@@ -174,7 +174,7 @@ variables:
     T1500:actual_range = 100.f, -100.f ;
     T1500:source = "Sandoval et al., 2024" ;
     T1500:_Storage = "chunked" ;
-    T1500:_ChunkSizes = 1, 675, 585 ;
+    T1500:_ChunkSizes = 1, YLEN, XLEN ;
     T1500:_DeflateLevel = 1 ;
 
   float whc(depth, y, x) ;
@@ -184,18 +184,8 @@ variables:
     whc:missing_value = -9999.f ;
     whc:actual_range = 100.f, -100.f ;
     whc:_Storage = "chunked" ;
-    whc:_ChunkSizes = 1, 675, 585 ;
+    whc:_ChunkSizes = 1, YLEN, XLEN ;
     whc:_DeflateLevel = 1 ;
-
-  float Ksat(depth, y, x) ;
-    Ksat:long_name = "saturated hydraulic conductivity" ;
-    Ksat:units = "mm h-1" ;
-    Ksat:_FillValue = -9999.f ;
-    Ksat:missing_value = -9999.f ;
-    Ksat:actual_range = 100.f, -100.f ;
-    Ksat:source = "Sandoval et al., 2024 (code only)" ;
-    Ksat:_Storage = "chunked" ;
-    Ksat:_ChunkSizes = 1, 675, 585 ;
 
   float lambda(depth, y, x) ;
     lambda:long_name = "pore size distribution index" ;
@@ -205,7 +195,7 @@ variables:
     lambda:actual_range = 100.f, -100.f ;
     lambda:source = "Sandoval et al., after Saxton and Rawls (2006; eqn 18)" ;
     lambda:_Storage = "chunked" ;
-    lambda:_ChunkSizes = 1, 675, 585 ;
+    lambda:_ChunkSizes = 1, YLEN, XLEN ;
 
   float psi_e(depth, y, x) ;
     psi_e:long_name = "tension at air entry" ;
@@ -215,7 +205,37 @@ variables:
     psi_e:actual_range = 100.f, -100.f ;
     psi_e:source = "Saxton and Rawls (2006; eqn 4) (converted to mm)" ;
     psi_e:_Storage = "chunked" ;
-    psi_e:_ChunkSizes = 1, 675, 585 ;
+    psi_e:_ChunkSizes = 1, YLEN, XLEN ;
+
+  float psi_f(depth, y, x) ;
+    psi_f:long_name = "capillary head at the wetting front" ;
+    psi_f:units = "mm" ;
+    psi_f:_FillValue = -9999.f ;
+    psi_f:missing_value = -9999.f ;
+    psi_f:actual_range = 100.f, -100.f ;
+    psi_f:source = "Sandoval et al. (2024)" ;
+    psi_f:_Storage = "chunked" ;
+    psi_f:_ChunkSizes = 1, YLEN, XLEN ;
+
+  float Ksat(depth, y, x) ;
+    Ksat:long_name = "saturated hydraulic conductivity" ;
+    Ksat:units = "mm h-1" ;
+    Ksat:_FillValue = -9999.f ;
+    Ksat:missing_value = -9999.f ;
+    Ksat:actual_range = 100.f, -100.f ;
+    Ksat:source = "Sandoval et al., 2024 (code only)" ;
+    Ksat:_Storage = "chunked" ;
+    Ksat:_ChunkSizes = 1, YLEN, XLEN ;
+
+  float ki(depth, y, x) ;
+    ki:long_name = "intrinsic permeability" ;
+    ki:units = "m2" ;
+    ki:_FillValue = -9999.f ;
+    ki:missing_value = -9999.f ;
+    ki:actual_range = 100.f, -100.f ;
+    ki:source = "Sandoval et al., 2024 (code only)" ;
+    ki:_Storage = "chunked" ;
+    ki:_ChunkSizes = 1, YLEN, XLEN ;
 
 // global attributes:
     :Conventions = "CF-1.11" ;

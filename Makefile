@@ -8,7 +8,7 @@ FCFLAGS = -ffree-form -ffree-line-length-none -ftree-vectorize -Wall
 # use the command "nf-config --all" to find the location of your netCDF installation
 # and enter the path next to " --prefix    ->" on the line below
 
-netcdf = /work/kaplan_lab/easybuild/software/netCDF-Fortran/4.6.1-gompi-2024a
+netcdf = /usr/local
 
 # should not need to modify anything below this line
 
