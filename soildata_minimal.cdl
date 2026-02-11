@@ -91,6 +91,20 @@ variables:
     sand:_ChunkSizes = 1, 675, 585 ;
     sand:_DeflateLevel = 1 ;
 
+  short silt(depth, lat, lon) ;
+    silt:long_name = "silt content by mass" ;
+    silt:units = "fraction" ;
+    silt:_FillValue = -32768s ;
+    silt:missing_value = -32768s ;
+    silt:actual_range = 100.f, -100.f ;
+    silt:valid_range = 0s, 1000s ;
+    silt:scale_factor = 0.001f ;
+    silt:source = "SoilGrids 2020" ;
+    silt:_Storage = "chunked" ;
+    silt:_Shuffle = "true" ;
+    silt:_ChunkSizes = 1, ylen, xlen ;
+    silt:_DeflateLevel = 1 ;
+
   short clay(depth, y, x) ;
     clay:long_name = "clay content by mass" ;
     clay:units = "fraction" ;

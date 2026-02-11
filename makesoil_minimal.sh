@@ -162,7 +162,7 @@ cdo -s setmisstonn $tmpdir/tmp.nc $tmpdir/tmp1.nc
 # -----
 # 8) paste soil properties into file
 
-for var in sand clay cfvo soc
+for var in sand silt clay cfvo soc
 do
 
   l=1
