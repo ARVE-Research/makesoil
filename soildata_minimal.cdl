@@ -102,7 +102,7 @@ variables:
     silt:source = "SoilGrids 2020" ;
     silt:_Storage = "chunked" ;
     silt:_Shuffle = "true" ;
-    silt:_ChunkSizes = 1, ylen, xlen ;
+    silt:_ChunkSizes = 1, 675, 585 ;
     silt:_DeflateLevel = 1 ;
 
   short clay(depth, y, x) ;
