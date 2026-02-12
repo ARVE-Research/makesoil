@@ -78,7 +78,7 @@ variables:
     thickness:_DeflateLevel = 1 ;
     
   short sand(depth, y, x) ;
-    sand:long_name = "sand content by mass" ;
+    sand:long_name = "sand content by mass adjusted for organic matter" ;
     sand:units = "fraction" ;
     sand:_FillValue = -32768s ;
     sand:missing_value = -32768s ;
@@ -91,8 +91,22 @@ variables:
     sand:_ChunkSizes = 1, YLEN, XLEN ;
     sand:_DeflateLevel = 1 ;
 
+  short silt(depth, y, x) ;
+    silt:long_name = "sand content by mass adjusted for organic matter" ;
+    silt:units = "fraction" ;
+    silt:_FillValue = -32768s ;
+    silt:missing_value = -32768s ;
+    silt:actual_range = 100.f, -100.f ;
+    silt:valid_range = 0s, 1000s ;
+    silt:scale_factor = 0.001f ;
+    silt:source = "SoilGrids 2020" ;
+    silt:_Shuffle = "true" ;
+    silt:_Storage = "chunked" ;
+    silt:_ChunkSizes = 1, YLEN, XLEN ;
+    silt:_DeflateLevel = 1 ;
+
   short clay(depth, y, x) ;
-    clay:long_name = "clay content by mass" ;
+    clay:long_name = "clay content by mass adjusted for organic matter" ;
     clay:units = "fraction" ;
     clay:_FillValue = -32768s ;
     clay:missing_value = -32768s ;
@@ -104,6 +118,20 @@ variables:
     clay:_Storage = "chunked" ;
     clay:_ChunkSizes = 1, YLEN, XLEN ;
     clay:_DeflateLevel = 1 ;
+
+  short orgm(depth, y, x) ;
+    orgm:long_name = "Soil organic matter content by mass" ;
+    orgm:units = "fraction" ;
+    orgm:_FillValue = -32768s ;
+    orgm:missing_value = -32768s ;
+    orgm:actual_range = 100.f, -100.f ;
+    orgm:valid_range = 0s, 10000s ;
+    orgm:scale_factor = 0.0001f ;
+    orgm:source = "SoilGrids 2020 SOC x 1.724 conversion factor" ;
+    orgm:_Shuffle = "true" ;
+    orgm:_Storage = "chunked" ;
+    orgm:_ChunkSizes = 1, YLEN, XLEN ;
+    orgm:_DeflateLevel = 1 ;
 
   short cfvo(depth, y, x) ;
     cfvo:long_name = "coarse fragments by volume" ;
@@ -118,20 +146,6 @@ variables:
     cfvo:_Storage = "chunked" ;
     cfvo:_ChunkSizes = 1, YLEN, XLEN ;
     cfvo:_DeflateLevel = 1 ;
-
-  short soc(depth, y, x) ;
-    soc:long_name = "Soil organic carbon content by mass" ;
-    soc:units = "fraction" ;
-    soc:_FillValue = -32768s ;
-    soc:missing_value = -32768s ;
-    soc:actual_range = 100.f, -100.f ;
-    soc:valid_range = 0s, 10000s ;
-    soc:scale_factor = 0.0001f ;
-    soc:source = "SoilGrids 2020" ;
-    soc:_Shuffle = "true" ;
-    soc:_Storage = "chunked" ;
-    soc:_ChunkSizes = 1, YLEN, XLEN ;
-    soc:_DeflateLevel = 1 ;
 
   float bulk(depth, y, x) ;
     bulk:long_name = "calculated bulk density" ;

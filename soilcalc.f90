@@ -37,11 +37,13 @@ real(sp), dimension(2) :: actual_range
 ! input variables
 
 real(sp)    :: sf_sand
+real(sp)    :: sf_silt
 real(sp)    :: sf_clay
 real(sp)    :: sf_cfvo
 real(sp)    :: sf_soc
 
 real(sp)    :: ao_sand
+real(sp)    :: ao_silt
 real(sp)    :: ao_clay
 real(sp)    :: ao_cfvo
 real(sp)    :: ao_soc
@@ -59,13 +61,14 @@ real(sp), allocatable, dimension(:,:) :: layer_bnds     ! depth coordinate of th
 integer(i1), allocatable, dimension(:,:)   :: usda  ! USDA soil classification (code)
 integer(i2), allocatable, dimension(:,:)   :: thickness  ! soil and regolith thickness (m)
 integer(i2), allocatable, dimension(:,:,:) :: sand  ! sand content by mass (fraction)
+integer(i2), allocatable, dimension(:,:,:) :: silt  ! silt content by mass (fraction)
 integer(i2), allocatable, dimension(:,:,:) :: clay  ! clay content by mass (fraction)
 integer(i2), allocatable, dimension(:,:,:) :: cfvo  ! coarse fragment content by volume (fraction)
 integer(i2), allocatable, dimension(:,:,:) :: soc   ! soil organic carbon content by mass (fraction)
+integer(i2), allocatable, dimension(:,:,:) :: orgm  ! soil organic matter content by mass (fraction)
 
 ! output variables
 
-real(sp), allocatable, dimension(:,:,:) :: silt   ! silt content by mass implied as residual sand and clay (fraction)
 real(sp), allocatable, dimension(:,:,:) :: bulk   ! bulk density (kg m-3)
 real(sp), allocatable, dimension(:,:,:) :: Tsat   ! soil porosity (Theta-sat) (fraction)
 real(sp), allocatable, dimension(:,:,:) :: T33    ! soil water content at field capacity (-33 kPa) (fraction)
@@ -242,13 +245,14 @@ end do
 allocate(usda(xlen,ylen))
 allocate(thickness(xlen,ylen))
 allocate(sand(xlen,ylen,nl))
+allocate(silt(xlen,ylen,nl))
 allocate(clay(xlen,ylen,nl))
 allocate(cfvo(xlen,ylen,nl))
 allocate(soc(xlen,ylen,nl))
+allocate(orgm(xlen,ylen,nl))
 
 ! output
 
-allocate(silt(xlen,ylen,nl)) 
 allocate(bulk(xlen,ylen,nl)) 
 allocate(Tsat(xlen,ylen,nl)) 
 allocate(T33(xlen,ylen,nl)) 
@@ -276,6 +280,7 @@ status = nf90_get_var(ifid,varid,thickness)
 if (status /= nf90_noerr) call handle_err(status)
 
 call getvar(ifid,'sand',sand,sf_sand,ao_sand)
+call getvar(ifid,'silt',silt,sf_silt,ao_silt)
 call getvar(ifid,'clay',clay,sf_clay,ao_clay)
 call getvar(ifid,'cfvo',cfvo,sf_cfvo,ao_cfvo)
 call getvar(ifid,'soc',soc,sf_soc,ao_soc)
@@ -306,14 +311,26 @@ do j = 1,ylen
     if (soil%usda <= 3) cycle  ! skip all cells with no soil classification
       
     soil%layer%sand = real(sand(i,j,:)) * sf_sand + ao_sand
+    soil%layer%silt = real(silt(i,j,:)) * sf_silt + ao_silt
     soil%layer%clay = real(clay(i,j,:)) * sf_clay + ao_clay
     soil%layer%cfvo = real(cfvo(i,j,:)) * sf_cfvo + ao_cfvo
-    soil%layer%orgm =  real(soc(i,j,:)) * sf_soc + ao_soc * omcf
-    
-    call soilproperties(soil)   ! this subroutine in soilpropertiesmod.f90 calculates the derived soil properties for one gridcell
+    soil%layer%orgm =  real(soc(i,j,:)) * sf_soc + ao_soc * omcf  ! 1.724 conversion factor to go from carbon to organic matter
+   
+    ! this subroutine in soilpropertiesmod.f90 calculates the organic-matter adjusted particle size fractions
+    ! and derived soil soil properties for one gridcell
+
+    call soilproperties(soil)   
     
     ! take the values for one gridcell and insert into to the rectangular array
+    ! adjusted input variables
     
+    sand(i,j,:)   = nint((soil%layer%sand - ao_sand) / sf_sand,i2)
+    silt(i,j,:)   = nint((soil%layer%silt - ao_silt) / sf_silt,i2)
+    clay(i,j,:)   = nint((soil%layer%clay - ao_clay) / sf_clay,i2)
+    orgm(i,j,:)   = nint((soil%layer%orgm - ao_soc) / sf_soc,i2)
+
+    ! derived soil properties
+
     bulk(i,j,:)   = soil%layer%bulk
     Tsat(i,j,:)   = soil%layer%Tsat
     T33(i,j,:)    = soil%layer%T33
@@ -347,10 +364,13 @@ if (status /= nf90_noerr) call handle_err(status)
 
 call putvari2_2d(ofid,'thickness',thickness)
 
+! write the organic-matter adjusted particle size distributions
+
 call putvari2(ofid,'sand',sand)
+call putvari2(ofid,'silt',silt)
 call putvari2(ofid,'clay',clay)
+call putvari2(ofid,'orgm',orgm)
 call putvari2(ofid,'cfvo',cfvo)
-call putvari2(ofid,'soc',soc)
 
 ! write the derived soil properties
 

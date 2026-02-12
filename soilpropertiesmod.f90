@@ -30,7 +30,7 @@ type soildata
   type(layerinfo), allocatable, dimension(:) :: layer
 end type soildata
 
-real(sp), parameter :: omcf = 1.724  ! conversion factor from organic carbon to organic matter
+real(sp), parameter :: omcf = 1.724  ! conversion factor from organic carbon to organic matter (Nelson & Sommers 1996)
 
 contains
 
@@ -54,6 +54,7 @@ integer  :: usda
 real(sp) :: zpos
 
 real(sp) :: sand
+real(sp) :: silt
 real(sp) :: clay
 real(sp) :: orgm
 real(sp) :: cfvo
@@ -74,7 +75,22 @@ real(sp) :: ki
 integer :: nl
 integer :: l
 
+real(sp) :: particlesum
+
 ! ----------
+! initalize output variables
+
+soil%layer%bulk   = -9999.
+soil%layer%Tsat   = -9999.
+soil%layer%T33    = -9999.
+soil%layer%T1500  = -9999.
+soil%layer%whc    = -9999.
+soil%layer%lambda = -9999.
+soil%layer%psi_e  = -9999.
+soil%layer%psi_f  = -9999.
+soil%layer%Ksat   = -9999.
+soil%layer%ki     = -9999.
+
 
 nl = size(soil%layer)
 
@@ -82,11 +98,30 @@ usda = soil%usda
 
 do l = 1,nl
 
+  ! assign input variables
+
   zpos = soil%layer(l)%zpos
   sand = soil%layer(l)%sand
+  silt = soil%layer(l)%silt
   clay = soil%layer(l)%clay
   orgm = soil%layer(l)%orgm 
   cfvo = soil%layer(l)%cfvo
+    
+  ! adjust particle size distribution so the mass fractions sum to 1
+
+  particlesum = sand + silt + clay
+
+  sand = sand / particlesum
+  silt = silt / particlesum
+  clay = clay / particlesum
+
+  ! further adjust for organic matter
+  
+  sand = sand - sand * orgm
+  silt = silt - silt * orgm
+  clay = clay - clay * orgm
+
+  if (orgm >= 0.25) cycle  ! skip organic soils for the moment
   
   ! ---
 
@@ -107,6 +142,11 @@ do l = 1,nl
   call calcKsat(sand,clay,orgm,Db,Tsat,T33,T1500,lambda,Ksat,ki)
 
   ! ---
+  ! assign output
+  
+  soil%layer(l)%sand   = sand
+  soil%layer(l)%silt   = silt
+  soil%layer(l)%clay   = clay
 
   soil%layer(l)%bulk   = Db
   soil%layer(l)%Tsat   = Tsat
