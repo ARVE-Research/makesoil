@@ -140,6 +140,7 @@ cdo -s setmisstonn tmp.nc tmp1.nc
 
 ./pastesoilcode tmp1.nc $outfile WRB
 
+# -----
 # 5) paste USDA soil class into output
 
 infile=$datadir/TAXOUSDA_250m_ll.tif

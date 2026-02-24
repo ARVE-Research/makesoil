@@ -301,6 +301,8 @@ psi_f  = rmissing
 Ksat   = rmissing
 ki     = rmissing
 
+orgm   = -32768
+
 write(0,*)'calculating'
 
 do j = 1,ylen
@@ -342,13 +344,13 @@ do j = 1,ylen
     Ksat(i,j,:)   = soil%layer%Ksat
     ki(i,j,:)     = soil%layer%ki
     
-    ! check for bad data
-    if (any(soil%layer%whc <= 0)) then
-      write(0,*)i,j
-      do l = 1,nl
-        write(0,*)l,soil%layer(l)%sand,soil%layer(l)%clay,soil%layer(l)%whc
-      end do
-    end if
+!     ! check for bad data
+!     if (any(soil%layer%whc <= 0)) then
+!       write(0,*)i,j
+!       do l = 1,nl
+!         write(0,*)l,soil%layer(l)%sand,soil%layer(l)%clay,soil%layer(l)%whc
+!       end do
+!     end if
 
   end do
 end do

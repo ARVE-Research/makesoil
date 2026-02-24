@@ -121,7 +121,7 @@ do l = 1,nl
   silt = silt - silt * orgm
   clay = clay - clay * orgm
 
-  if (orgm >= 0.25) cycle  ! skip organic soils for the moment
+  if (orgm > 0.08) cycle  ! skip organic soils for the moment
   
   ! ---
 

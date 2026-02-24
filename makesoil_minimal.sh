@@ -87,7 +87,24 @@ echo "making output file $outfile"
 ncgen -4 -o $outfile soildata_minimal.cdl
 
 # -----
-# 5) paste USDA soil class into output
+# 5.1) paste WRB soil class into output
+
+infile=$datadir/TAXNWRB_250m_ll.tif
+
+gdalwarp --quiet -overwrite -t_srs $wkt -te $bounds -wm 12G -multi -wo NUM_THREADS=16 -tr $res -tap -r mode -dstnodata 0 -of netCDF $infile $tmpdir/tmp.nc
+
+# extrapolate to missing areas (urban and some water)
+
+cdo -s setmisstonn $tmpdir/tmp.nc $tmpdir/tmp1.nc
+
+# clip to landmask
+
+./masklandmask_byte $landfrac $tmpdir/tmp1.nc
+
+./pastesoilcode $tmpdir/tmp1.nc $outfile WRB
+
+# -----
+# 5.2) paste USDA soil class into output
 
 infile=$datadir/TAXOUSDA_250m_ll.tif
 

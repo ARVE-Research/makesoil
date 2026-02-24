@@ -51,6 +51,18 @@ variables:
     dz:long_name = "soil layer thickness" ;
     dz:units = "cm" ;
 
+  byte WRB(y, x) ;
+    WRB:long_name = "Predicted WRB 2006 subgroup classes" ;
+    WRB:units = "class" ;
+    WRB:_FillValue = -1b ;
+    WRB:missing_value = -1b ;
+    WRB:actual_range = 0b, -1b ;
+    WRB:valid_range = 1b, 99b ;
+    WRB:source = "SoilGrids 2017" ;
+    WRB:_Storage = "chunked" ;
+    WRB:_ChunkSizes = 675, 585 ;
+    WRB:_DeflateLevel = 1 ;
+
   byte USDA(y, x) ;
     USDA:long_name = "Predicted USDA 2014 suborder classes" ;
     USDA:units = "class" ;
