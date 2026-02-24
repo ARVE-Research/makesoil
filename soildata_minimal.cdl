@@ -57,7 +57,7 @@ variables:
     WRB:_FillValue = -1b ;
     WRB:missing_value = -1b ;
     WRB:actual_range = 0b, -1b ;
-    WRB:valid_range = 1b, 99b ;
+    WRB:valid_range = 1b, 117b ;
     WRB:source = "SoilGrids 2017" ;
     WRB:_Storage = "chunked" ;
     WRB:_ChunkSizes = 675, 585 ;
