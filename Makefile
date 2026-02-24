@@ -37,6 +37,8 @@ MASKLANDMASK_OBJS = masklandmask.o
 
 MASKLANDMASK_BYTE_OBJS = masklandmask_byte.o
 
+MASKANDPACK_OBJS = mask-and-pack.o
+
 SOILCALC_OBJS = parametersmod.o     \
                 pedotransfermod.o  \
                 soilpropertiesmod.o \
@@ -80,6 +82,9 @@ masklandmask: $(MASKLANDMASK_OBJS)
 
 masklandmask_byte: $(MASKLANDMASK_BYTE_OBJS)
 	$(FC) $(FCFLAGS) -o masklandmask_byte $(MASKLANDMASK_BYTE_OBJS) $(LDFLAGS) $(LIBS)
+
+mask-and-pack: $(MASKANDPACK_OBJS)
+	$(FC) $(FCFLAGS) -o mask-and-pack $(MASKANDPACK_OBJS) $(LDFLAGS) $(LIBS)
 
 soilcalc: $(SOILCALC_OBJS)
 	$(FC) $(FCFLAGS) -o soilcalc $(SOILCALC_OBJS) $(LDFLAGS) $(LIBS)
