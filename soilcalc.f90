@@ -303,9 +303,20 @@ ki     = rmissing
 
 orgm   = -32768
 
+open(20,file='ksat1.txt',status='unknown')
+open(30,file='ksat2.txt',status='unknown')
+
+write(0,*)'calculating'
+
+
+open(40,file='whc.txt',status='unknown')
+
 write(0,*)'calculating'
 
 do j = 1,ylen
+ 
+  ! write(0,*)j
+
   do i = 1,xlen
   
     soil%usda = usda(i,j)
@@ -343,7 +354,8 @@ do j = 1,ylen
     psi_f(i,j,:)  = soil%layer%psi_f
     Ksat(i,j,:)   = soil%layer%Ksat
     ki(i,j,:)     = soil%layer%ki
-    
+
+
 !     ! check for bad data
 !     if (any(soil%layer%whc <= 0)) then
 !       write(0,*)i,j
@@ -354,6 +366,9 @@ do j = 1,ylen
 
   end do
 end do
+
+close(20)
+close(30)
 
 ! ---------
 ! copy the input variables to the output file

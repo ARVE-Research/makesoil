@@ -12,7 +12,7 @@ type layerinfo
   real(sp) :: clay    ! mass fraction
   real(sp) :: cfvo    ! coarse fragment content (volume fraction)
   real(sp) :: orgm    ! organic matter content (mass fraction)
-  real(sp) :: bulk    ! bulk density (g m-3)
+  real(sp) :: bulk    ! bulk density (g cm-3)
   real(sp) :: Tsat    ! porosity (fraction)
   real(sp) :: T33     ! water content at -33 KPa tension (fraction)
   real(sp) :: T1500   ! water content at -1500 KPa tension (fraction)
@@ -39,7 +39,7 @@ contains
 subroutine soilproperties(soil)
 
 use parametersmod,   only : sp
-use pedotransfermod, only : fDp,fDb,fTsat,fT33,fT1500,calcKsat,fPsi_e
+use pedotransfermod, only : fDp,fDb,fTsat,fT33,fT1500,calcKsat3,fPsi_e,fDb2,calcKsat,calcKsat2
 
 implicit none
 
@@ -91,7 +91,6 @@ soil%layer%psi_f  = -9999.
 soil%layer%Ksat   = -9999.
 soil%layer%ki     = -9999.
 
-
 nl = size(soil%layer)
 
 usda = soil%usda
@@ -117,17 +116,20 @@ do l = 1,nl
 
   ! further adjust for organic matter
   
-  sand = sand - sand * orgm
-  silt = silt - silt * orgm
-  clay = clay - clay * orgm
+  ! sand = sand - sand * orgm
+  ! silt = silt - silt * orgm
+  ! clay = clay - clay * orgm
 
-  if (orgm > 0.08) cycle  ! skip organic soils for the moment
+  ! if (orgm > 0.08) cycle  ! skip organic soils for the moment
   
   ! ---
 
   Dp = fDp(orgm,cfvo)
     
   Db = fDb(usda,clay,cfvo,zpos,orgm,Dp)
+ 
+! New way of calculating
+  ! Db = fDb2(orgm,cfvo)
 
   Tsat = fTsat(Dp,Db)
     
@@ -139,7 +141,17 @@ do l = 1,nl
 
   psi_f = (2. + 3. * lambda) / (1. + 3. * lambda) * psi_e / 2.  ! Sandoval et al. (2024) eqn 29, NB this value will be negative
 
+
+
   call calcKsat(sand,clay,orgm,Db,Tsat,T33,T1500,lambda,Ksat,ki)
+
+  if (l == 1) write(20,*)orgm*100.,Ksat,sand*100.
+
+  call calcKsat2(orgm,Db,Ksat)
+
+  call calcKsat3(orgm,sand,Db,Ksat)
+
+  if (l == 1) write(30,*)orgm*100.,Ksat,sand*100.
 
   ! ---
   ! assign output
@@ -158,6 +170,8 @@ do l = 1,nl
   soil%layer(l)%psi_f  = psi_f
   soil%layer(l)%Ksat   = Ksat
   soil%layer(l)%ki     = ki
+
+  if (l == 1) write(40,*) orgm*100., (T33 - T1500), sand*100.
 
 end do
 

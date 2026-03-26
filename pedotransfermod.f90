@@ -14,10 +14,13 @@ implicit none
 
 public :: fDp
 public :: fDb
+public :: fDb2
 public :: fTsat
 public :: fT33
 public :: fT1500
 public :: calcKsat
+public :: calcKsat2
+public :: calcKsat3
 public :: fki
 public :: fPsi_e
 
@@ -61,7 +64,9 @@ real(sp), intent(in) :: cfvo  ! coarse fragment content (volume fraction)
 ! local variable
 
 real(sp) :: Dp
+real(sp) :: orgm_eff
 
+orgm_eff = 0.0
 ! ---
 
 Dp = 1. / (orgm / 1.3 + (1. - orgm) / 2.65)
@@ -69,6 +74,78 @@ Dp = 1. / (orgm / 1.3 + (1. - orgm) / 2.65)
 fDp = Dp * (1. - cfvo) + cfvo * Dcf
 
 end function fDp
+
+! ----------------------------------------------------------------------------------------------------------------
+! The updated function for Dp2 via Ruehlmann 2020.
+! real(sp) function fDb(sand,silt,clay,cfvo,orgm)
+
+! use parametersmod, only : sp
+
+! implicit none
+
+! ! Setting arguments
+! real(sp), intent(in) :: clay  ! clay content (mass fraction)
+! real(sp), intent(in) :: cfvo  ! coarse fragment content (volume fraction)
+! real(sp), intent(in) :: orgm  ! organic matter content (mass fraction)
+! real(sp), intent(in) :: silt  ! silt content (mass fraction)
+! real(sp), intent(in) :: sand  ! sand content (mass fraction)
+
+! ! Setting parameters
+! real(sp), parameter :: Dcf = 2.7  ! bulk density of coarse fragments (g cm-3)
+
+
+! ! Setting particle densities per Ruehlmann 2020 values
+! real(sp), parameter :: rho_sand = 2.656 ! g cm-3
+! real(sp), parameter :: rho_silt = 2.692 ! g cm-3
+! real(sp), parameter :: rho_clay = 2.761 ! g cm-3
+! real(sp), parameter :: rho_org = 1.274 ! g cm-3
+
+! ! Setting mineral and organic variable arguments
+! real(sp) :: SOM
+! real(sp) :: SMS
+! real(sp) :: Db
+
+! ! Local variables
+! real(sp) :: clayv
+! real(sp) :: siltv
+! real(sp) :: sandv
+! real(sp) :: orgmv
+! real(sp) :: mineral
+! real(sp) :: organic
+
+! SOM = orgm
+! SMS = 1. - SOM
+
+! ! Setting boundaries if SOM is less than 1% to just be 100% mineral soil.
+! if (orgm < 0.01) then
+!   SMS = 1.0
+! end if
+
+! clayv = clay / rho_clay
+! siltv = silt / rho_silt
+! sandv = sand / rho_sand
+! orgmv = orgm / rho_org
+
+! mineral = 1. / (clayv + sandv + siltv)
+! organic = 1. / orgmv
+
+! Db = 1. / (SMS / mineral + SOM / organic)
+
+! if (Db > 3.) then
+
+!   write(0,*)sand,silt,clay,orgm,SOM,SMS,mineral,organic,Db,SOM/organic,SMS/mineral
+!   read(*,*)
+
+! end if
+
+! ! Defining Db using the Ruehlmann 2020 function
+
+!  ! Db = 1.0 / ( (SMS * (clay/rho_clay + silt/rho_silt + sand/rho_sand)) + &
+!  !              (SOM  * (orgm/rho_org)) )
+
+! fDb = Db * (1. - cfvo) + cfvo * Dcf  ! Balland et al. (2008) eqn A.13
+
+! end function fDb
 
 ! ----------------------------------------------------------------------------------------------------------------
 
@@ -126,6 +203,7 @@ real(sp) :: c
 real(sp) :: d
 
 real(sp) :: Dbs
+real(sp) :: orgm_eff
 
 ! ----
 
@@ -166,13 +244,50 @@ b = pars(2)
 c = pars(3)
 d = pars(4)
 
+orgm_eff = 0.0
+
 Dbs = (a + (Dp - a - b * (1. - clay)) * (1. - exp(-c * zpos))) / (1. + d * orgm)
 
 fDb = Dbs * (1. - cfvo) + cfvo * Dcf  ! Balland et al. (2008) eqn A.13
 
 end function fDb
 
-! ----------------------------
+! ------------------------------------------------------------------------------------------------
+! Implementing new function from Ruehlmann & Korschens (2009). Also uses the Balland et al. (2008) eqn A.13
+
+real(sp) function fDb2(orgm,cfvo)
+
+use parametersmod, only : sp
+
+implicit none
+
+! Variables used in the PTF
+real(sp), intent(in) :: orgm ! organic matter mass fraction
+real(sp), intent(in) :: cfvo ! coarse fragment volumetric fraction
+real(sp) :: SOC  ! organic carbon (g cm-3)
+real(sp) :: b  ! SOC control for non-linear relationship between SOC increase and bulk density decrease (unitless)
+real(sp) :: c  ! baseline density for mineral soil (g cm-3)
+real(sp) :: d  ! organic carbon sensitivity coefficient (unitless)
+
+! Setting variable for bulk density equation
+real(sp) :: Dbs  ! bulk density
+
+! Defining the above parameters
+SOC = orgm / 1.724
+
+b = 0.008
+c = 2.684 ! g cm-3
+d = 140.943
+
+! Using Ruehlmann & Korschen's for bulk density of fines
+Dbs = (c - (d * b)) * (exp(-b * SOC)) ! eqn 6 from Ruehlmann & Korschens (2009)
+
+! Using Balland et al. (2008) for overall bulk density.
+fDb2 = Dbs * (1. - cfvo) + cfvo * Dcf  ! Balland et al. (2008) eqn A.13
+
+end function fDb2
+
+! ----------------------------------------------------------------------------------------------
 
 real(sp) function fTsat(Dp,Db)
 
@@ -213,7 +328,12 @@ real(sp), parameter :: b = -0.0010
 real(sp), parameter :: c =  0.4760
 real(sp), parameter :: d =  0.9402
 
+! Local variables
+real(sp) :: orgm_eff
+
 ! ----
+
+orgm_eff = 0.0
 
 fT33 = Tsat * (c + (d - c) * clay**0.5) * exp((a * sand - b * orgm) / Tsat)
 
@@ -303,6 +423,114 @@ Ksat = Ksmax / (1. + exp(k2 * sand + k3 * Db + k4 * clay + k5 * Tdrain + k6 * or
 ki = fki(Ksat)
 
 end subroutine calcKsat
+
+! ----------------------------------------------------------------------------------------------------------------
+! A proposed updated version of saturated hydraulic conductivity for high SOC soils from Bloemen (1983).
+! This equation is meant to only be used for soils with SOM exceeding 30%.
+subroutine calcKsat2(orgm,Db,Ksat) ! (mm/hr)
+
+use parametersmod, only : sp
+
+implicit none
+
+! Ksat2 arguments
+real(sp), intent(in)  :: orgm   ! organic matter content (mass fraction)
+real(sp), intent(in)  :: Db   ! Sandoval bulk density(g cm-3)
+real(sp), intent(out)  :: Ksat   ! saturated hydraulic conductivity
+! real(sp) :: M ! mineral fraction of dry soil (unitless)
+
+! ! Ksat2 parameters
+! real(sp), parameter :: Dpm = 2.656 ! parcticle density of mineral matter (g cm-3)
+! real(sp), parameter :: Dpo = 1.600 ! parcticle density of organic matter (g cm-3)
+
+! ! Equation variable declaration
+! real(sp) :: Vs ! volume percentage of peat soils occupied by solid (mineral matter)
+! real(sp) :: Ksat2 ! saturated hydraulic conductivity per Bloeman (1983) (mm/hr)
+
+! ! Setting up arguments
+! M = 1. - orgm
+
+! ! Creating the equations
+! Vs = 100. * (((2.65 - M) * Db) / (Dpm * Dpo))
+
+! Ksat = 16982. * (Vs ** (-4.1))
+
+Ksat = 0.00266 * Db**(-3.625)
+
+end subroutine calcKsat2
+
+! ----------------------------------------------------------------------------------------------------------------
+! Saturated hydraulic conductivity equation from the Community Land Model (CLM 4.0), produced by Oleson et al. 
+! (2010), which incorporates a mixing model. Equations used come from section 7.4.1: Soil Hydaulics.
+! This Ksat PTF produces a wide range of outputs (3.7-2579.5 mm hr-1), but this is justified by the findings of Letts et al. (2000),
+! and the definition of SOM (pure peat) as outlined by Oleson et al. (2010) in this paper (Oleson et al., pg, 142, 2010).
+
+! This equation is meant to only be used for soils with SOM exceeding 30%.
+subroutine calcKsat3(orgm,sand,Db,Ksat) ! (mm/hr)
+
+use parametersmod, only : sp
+
+implicit none
+
+! Ksat3 arguments
+real(sp), intent(in)  :: orgm   ! organic matter content (mass fraction)
+real(sp), intent(in)  :: sand   ! mass fraction of sand
+real(sp), intent(in)  :: Db   ! bulk density soil
+real(sp), intent(out)  :: Ksat   ! saturated hydaulic conductivity (mm hr-1)
+
+! Ksat3 local variables
+real(sp) :: Nperc ! connectivity standardization constant
+real(sp) :: fom ! organic matter volumetric fraction
+real(sp) :: fperc ! percolation fraction
+real(sp) :: funcon ! fraction of unconnected soil
+real(sp) :: ksat_min ! mineral saturated hydraulic conductivity (mm hr-1)
+real(sp) :: ksat_uncon ! mineral saturated hydraulic conductivity (mm hr-1)
+real(sp) :: pct_sand ! percent sand
+real(sp) :: orgm_eff
+
+! Ksat3 parameters
+real(sp), parameter :: rho_om = 0.130 ! organic matter density (g cm-3) taken from Lawrence & Slater (2007)
+real(sp), parameter :: Bperc = 0.139 ! organic matter connectivity (unitless)
+real(sp), parameter :: fth = 0.500 ! percolation threshold; where organic matter dominates connectivity (set to 0.5, or 50% SOM)
+real(sp), parameter :: ksat_om = 465.6 ! Ksat of organic matter (mm hr-1)
+
+! Organic Ksat calculations
+orgm_eff = 0.0
+fom = orgm
+
+if (orgm >= 0.99) then
+    Ksat = ksat_om
+    return
+end if
+
+Nperc = (1. - fth)**(-Bperc) ! Oleson et al. eqn 7.88a (referenced in the text)
+
+if (fom >= fth) then
+    fperc = Nperc * (fom - fth)**Bperc * fom ! Oleson et al. (2010) eqn 7.88
+else
+    fperc = 0.0
+end if
+
+pct_sand = sand * 100.
+
+! Mineral Ksat calculations
+ksat_min = (0.0070556 * ( 10.**(-0.884 + 0.0153 * pct_sand) )) * 3600 ! Oleson et al. (2010) eqn 7.90 converted from in hr-1 to mm hr-1
+
+funcon = 1. - fperc
+
+ksat_uncon = funcon / (((1. - fom) / ksat_min) + ((fom - fperc) / ksat_om)) ! Oleson et al. (2010) eqn 7.89
+
+
+! Calculating bulk Ksat
+Ksat = (funcon * ksat_uncon) + ((1. - funcon) * ksat_om) ! Oleson et al. (2010) eqn 7.91
+
+! if (Ksat < 1.) then
+!   write(0,*)Ksat,ksat_min,ksat_uncon,sand
+!   read(*,*)
+! end if
+
+
+end subroutine calcKsat3
 
 ! ----------------------------------------------------------------------------------------------------------------
 

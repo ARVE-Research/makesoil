@@ -13,6 +13,8 @@
 
 make
 
+rm ksat*.txt
+
 # get the dimension sizes from a ncdump of the input file and create an empty output file
 
 template=soildata_template_proj.cdl
