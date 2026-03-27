@@ -44,6 +44,11 @@ SOILCALC_OBJS = parametersmod.o     \
                 soilpropertiesmod.o \
                 soilcalc.o
 
+SOILCALC_POINT_OBJS = parametersmod.o     \
+                pedotransfermod.o  \
+                soilpropertiesmod.o \
+                soilcalc_point.o
+
 # ---------------------------------------------
 
 .SUFFIXES: .o .f90 .F90 .f .mod
@@ -60,7 +65,7 @@ SOILCALC_OBJS = parametersmod.o     \
 %.o : %.F90
 	$(FC) $(FCFLAGS) -c -o $(*F).o $(CPPFLAGS) $<
 
-all::	pastesoilcode ncpaste pastesoil pastecoords makethickness masklandmask masklandmask_byte soilcalc
+all::	pastesoilcode ncpaste pastesoil pastecoords makethickness masklandmask masklandmask_byte soilcalc soilcalc_point
 
 pastesoilcode: $(PASTESOILCODE_OBJS)
 	$(FC) $(FCFLAGS) -o pastesoilcode $(PASTESOILCODE_OBJS) $(LDFLAGS) $(LIBS)
@@ -89,5 +94,8 @@ mask-and-pack: $(MASKANDPACK_OBJS)
 soilcalc: $(SOILCALC_OBJS)
 	$(FC) $(FCFLAGS) -o soilcalc $(SOILCALC_OBJS) $(LDFLAGS) $(LIBS)
 
+soilcalc_point: $(SOILCALC_POINT_OBJS)
+	$(FC) $(FCFLAGS) -o soilcalc_point $(SOILCALC_POINT_OBJS) $(LDFLAGS) $(LIBS)
+
 clean::	
-	-rm *.o *.mod pastesoilcode ncpaste pastesoil pastecoords makethickness masklandmask masklandmask_byte soilcalc
+	-rm *.o *.mod pastesoilcode ncpaste pastesoil pastecoords makethickness masklandmask masklandmask_byte soilcalc soilcalc_point

@@ -235,7 +235,7 @@ case(40:45)               ! Vertisols
 case(20:27)               ! Andisols general
   pars = parstable(:,17)
 case default
-  write(0,*)'USDA type',usda,' was not classified, using average parameter set'
+  ! write(0,*)'USDA type',usda,' was not classified, using average parameter set'
   pars = [ 1.40, 0.95, 0.015, 5.82 ]
 end select
 
